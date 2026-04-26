@@ -31,3 +31,8 @@ desktop.ini
 # Logs
 *.log
 npm-debug.log*
+demos/*
+
+
+# API tokens
+*.txt

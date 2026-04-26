@@ -148,14 +148,14 @@ The `infra/` directory contains modular Bicep templates. Deploy with the Azure C
 
 ```bash
 # Create a resource group
-az group create --name rg-stocksentiment-dev --location eastus
+az group create --name rg-stocksentiment-dev --location northcentralus
 
 # Deploy infrastructure (dev)
 az deployment group create \
   --resource-group rg-stocksentiment-dev \
   --template-file infra/main.bicep \
   --parameters infra/parameters/dev.bicepparam \
-  --parameters location=eastus
+  --parameters location=northcentralus
 ```
 
 ### Parameter files
@@ -204,7 +204,7 @@ Usage: deploy.sh [OPTIONS]
 
 Options:
   --resource-group    Azure resource group name (required)
-  --location          Azure region (default: eastus)
+  --location          Azure region (default: northcentralus)
   --environment       Target environment: dev | staging | prod (default: dev)
   --app-name-prefix   Prefix for Azure resource names (default: stocksentiment)
   --infra-only        Deploy only infrastructure (skip app deployment)
@@ -369,6 +369,8 @@ Analyse social sentiment for a stock ticker.
 
 ## Demo Guide
 
+> **Note on X.com API:** As of early 2025, free-tier X.com API credits are no longer available — new developer accounts receive zero credits, and existing free-tier allocations have been exhausted. For demo purposes, this app includes a **mock data mode** (`USE_MOCK_DATA=true` in `.env`) that supplies realistic sample tweets. The mock tweets are still sent to **real Azure Text Analytics** for sentiment analysis, so the entire AI pipeline runs end-to-end — only the tweet source is simulated.
+
 ### Step 1 – Start the app
 
 ```bash
@@ -380,6 +382,8 @@ Open <http://localhost:3000> in your browser.
 ### Step 2 – Analyse a ticker
 
 Type **`$MSFT`** (or any valid ticker) into the search box and click **Analyze**.
+
+> **What happens behind the scenes:** When you click Analyze, the backend loads sample posts in mock mode (or calls the **X.com API v2** if live credentials are available). Each post's text is then sent in batches of 10 to **Azure AI Language (Text Analytics)** which returns a sentiment label (positive/negative/neutral/mixed) and confidence scores for each. Finally, the **aggregator** tallies the per-post results into an overall Bullish/Bearish/Neutral verdict with average confidence scores.
 
 ### Step 3 – Review results
 

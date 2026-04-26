@@ -8,6 +8,7 @@
 
 const config = require('../config');
 const { getTwitterBearerToken } = require('./keyvault');
+const { generateMockTweets } = require('./mockTweets');
 
 const SEARCH_URL = 'https://api.twitter.com/2/tweets/search/recent';
 
@@ -32,6 +33,12 @@ function sleep(ms) {
  * @throws {Error} On network or unexpected API errors
  */
 async function fetchTweets(ticker, maxResults) {
+  // Mock/demo mode — bypass X.com API entirely
+  if (config.useMockData) {
+    console.log(`[MOCK MODE] Returning sample tweets for ${ticker}`);
+    return generateMockTweets(ticker, maxResults || config.maxTweets);
+  }
+
   const bearerToken = await getTwitterBearerToken();
   const count = Math.min(Math.max(maxResults || config.maxTweets, 10), 100);
 
@@ -72,6 +79,12 @@ async function fetchTweets(ticker, maxResults) {
   if (response.status === 403) {
     console.warn('Twitter API returned 403 – access denied. Check API tier / permissions.');
     return [];
+  }
+
+  // Auto-fallback to mock data when credits are depleted
+  if (response.status === 402) {
+    console.warn('Twitter API credits depleted (402). Falling back to mock data.');
+    return generateMockTweets(ticker, count);
   }
 
   if (!response.ok) {

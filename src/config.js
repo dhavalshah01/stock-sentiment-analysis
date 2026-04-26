@@ -30,6 +30,9 @@ const config = {
 
   /** @type {number} Maximum requests per rate-limit window */
   rateLimitMax: 100,
+
+  /** @type {boolean} Use mock tweet data instead of calling X.com API */
+  useMockData: process.env.USE_MOCK_DATA === 'true',
 };
 
 /**

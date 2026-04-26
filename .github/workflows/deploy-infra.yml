@@ -20,7 +20,7 @@ on:
         description: "Azure region"
         required: false
         type: string
-        default: eastus
+        default: northcentralus
 
 permissions:
   id-token: write
@@ -55,7 +55,7 @@ jobs:
       name: ${{ github.event.inputs.environment || 'dev' }}
     env:
       ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
-      LOCATION: ${{ github.event.inputs.location || 'eastus' }}
+      LOCATION: ${{ github.event.inputs.location || 'northcentralus' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

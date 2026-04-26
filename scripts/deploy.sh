@@ -9,7 +9,7 @@ readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Defaults
 RESOURCE_GROUP=""
-LOCATION="eastus"
+LOCATION="northcentralus"
 ENVIRONMENT="dev"
 APP_NAME_PREFIX="stocksentiment"
 INFRA_ONLY=false
@@ -35,7 +35,7 @@ Deploy Stock Sentiment Analysis infrastructure and/or application.
 
 Options:
   --resource-group    Azure resource group name (required)
-  --location          Azure region (default: eastus)
+  --location          Azure region (default: northcentralus)
   --environment       Target environment: dev, staging, prod (default: dev)
   --app-name-prefix   Prefix for Azure resource names (default: stocksentiment)
   --infra-only        Deploy only infrastructure (skip app deployment)

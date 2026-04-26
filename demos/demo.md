@@ -17,9 +17,9 @@ Complete these steps BEFORE the audience arrives:
 - Verify: `az account show --query name -o tsv`
 
 ### 2. X.com API Access
-- X Developer account with an approved app
-- Bearer Token ready (do NOT display on screen during demo)
-- Set in environment: `export TWITTER_BEARER_TOKEN="your-token-here"`
+- **Note:** As of early 2025, X.com free-tier API credits are no longer available. New developer accounts receive zero credits, and existing free-tier allocations have been exhausted.
+- For this demo we use **mock data mode** (`USE_MOCK_DATA=true` in `.env`), which supplies realistic sample tweets. Azure Text Analytics still processes them for real sentiment scoring — only the tweet source is simulated.
+- If you have a paid X Developer account with active credits, set `USE_MOCK_DATA=false` and provide your Bearer Token to use live data.
 
 ### 3. Tools Ready
 - VS Code open (with the project NOT yet cloned - we do that live)
@@ -170,10 +170,14 @@ cp .env.example .env
 ```
 AZURE_TEXT_ANALYTICS_ENDPOINT=https://stocksentiment-dev-lang.cognitiveservices.azure.com/
 AZURE_TEXT_ANALYTICS_KEY=<paste from Azure Portal → AI Language resource → Keys and Endpoint>
-TWITTER_BEARER_TOKEN=<your bearer token>
+TWITTER_BEARER_TOKEN=<your bearer token, or leave as placeholder in mock mode>
 PORT=3000
 NODE_ENV=development
+USE_MOCK_DATA=true
 ```
+
+**PRESENTER SAYS:**
+"Notice `USE_MOCK_DATA=true` at the bottom. X.com's free API tier no longer provides credits, so we're using realistic sample tweets for this demo. The important thing is that Azure Text Analytics still processes every tweet for real — the AI sentiment scoring is 100% live. Only the tweet source is simulated. If you have a paid X API plan, just flip this to `false` and supply your Bearer Token."
 
 **PRESENTER SAYS:**
 "For local development, we connect directly with the API key. On Azure, the deployed app would use Key Vault with managed identity instead - no keys in configuration at all. The code handles both scenarios automatically through a dual-mode secret retrieval pattern."
@@ -258,7 +262,7 @@ Fourth, the actual pipeline: fetch tweets, analyze sentiment, aggregate results.
 **ACTION:** In the browser, type `MSFT` in the ticker input and click **Analyze**.
 
 **PRESENTER SAYS (while the loading spinner shows):**
-"Right now the backend is calling the X.com API to fetch the 50 most recent English-language posts mentioning $MSFT - excluding retweets to reduce noise. Each post then goes to Azure AI Language in batches of 10 for sentiment scoring."
+"Right now the backend is loading sample posts from our mock data module — these are realistic stock-related tweets with a mix of bullish, bearish, and neutral opinions. Each post then goes to Azure AI Language in batches of 10 for real sentiment scoring. In a live production scenario with a paid X.com API plan, these would be actual real-time posts from X.com."
 
 **ACTION:** When results appear, walk through each section of the UI top to bottom:
 
@@ -406,14 +410,14 @@ Stop the local Node.js server by pressing `Ctrl+C` in the terminal where `npm st
 | Issue | Cause | Fix |
 |-------|-------|-----|
 | `Missing required env var: AZURE_TEXT_ANALYTICS_ENDPOINT` | `.env` file not configured or not in `src/` directory | Copy `.env.example` to `.env` inside the `src/` folder and fill in all values |
-| Empty results / "No recent posts found" | X.com Bearer Token invalid, expired, or lacks v2 API access | Regenerate token from the X Developer Portal; ensure your app has Recent Search access |
+| Empty results / "No recent posts found" | X.com Bearer Token invalid, expired, or lacks v2 API access | Enable mock mode (`USE_MOCK_DATA=true`), or regenerate token from the X Developer Portal if on a paid plan |
 | `429 Too Many Requests` from X.com | X API rate limit hit (450 requests per 15 min on basic tier) | Wait 15 minutes for the rate window to reset, or rely on cached results |
 | `401 Unauthorized` from Text Analytics | Wrong endpoint URL or rotated API key | Verify `AZURE_TEXT_ANALYTICS_ENDPOINT` and `AZURE_TEXT_ANALYTICS_KEY` match the Azure Portal values |
 | `Secret "..." not found in Key Vault or env var` | Neither Key Vault nor environment variable has the required secret | For local dev: ensure `.env` has `AZURE_TEXT_ANALYTICS_KEY` and `TWITTER_BEARER_TOKEN`. For Azure: check Key Vault secrets exist |
 | Deployment fails with "F0 already exists" | Free-tier Cognitive Services is limited to one F0 per kind per subscription | Delete the existing F0 Text Analytics resource, or use the `S` (standard) tier instead |
 | Bicep deployment fails on Key Vault name | Key Vault names must be globally unique and ≤24 characters | Change the `appName` parameter to a shorter or more unique prefix |
 | Chart not rendering | Chart.js CDN (`cdn.jsdelivr.net`) blocked by network policy | Check firewall/proxy rules, or download Chart.js and serve it from `src/public/js/` |
-| App starts but crashes on first request | Missing `TWITTER_BEARER_TOKEN` - not validated at startup, only on first use | Add the bearer token to `.env` and restart the server |
+| App starts but crashes on first request | Missing `TWITTER_BEARER_TOKEN` and mock mode is off | Either set `USE_MOCK_DATA=true` in `.env`, or add a valid bearer token and restart the server |
 
 ---
 
