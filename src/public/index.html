@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Sentiment Analyzer</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header__inner">
+      <h1 class="header__title">📈 Stock Sentiment Analyzer</h1>
+      <p class="header__subtitle">Real-time social sentiment from X.com &amp; Azure AI</p>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Search Form -->
+    <section class="search-section">
+      <form id="analyzeForm" class="search-form" autocomplete="off">
+        <div class="input-group">
+          <span class="input-prefix">$</span>
+          <input
+            type="text"
+            id="tickerInput"
+            class="input-ticker"
+            placeholder="AAPL"
+            maxlength="10"
+            required
+          />
+        </div>
+        <button type="submit" id="analyzeBtn" class="btn btn--primary">
+          Analyze
+        </button>
+      </form>
+      <p class="search-hint">Enter a stock ticker (e.g. AAPL, TSLA, MSFT)</p>
+    </section>
+
+    <!-- Loading Spinner -->
+    <div id="loader" class="loader hidden">
+      <div class="spinner"></div>
+      <p>Fetching posts &amp; analysing sentiment…</p>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorBox" class="error-box hidden"></div>
+
+    <!-- Results (hidden until data arrives) -->
+    <section id="results" class="results hidden">
+      <!-- Summary Card -->
+      <div class="summary-card" id="summaryCard">
+        <div class="summary-card__sentiment" id="overallSentiment"></div>
+        <div class="summary-card__details">
+          <div class="stat">
+            <span class="stat__value" id="totalPosts">0</span>
+            <span class="stat__label">Posts Analysed</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value" id="avgPositive">0%</span>
+            <span class="stat__label">Avg Positive</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value" id="avgNeutral">0%</span>
+            <span class="stat__label">Avg Neutral</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value" id="avgNegative">0%</span>
+            <span class="stat__label">Avg Negative</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-container">
+        <canvas id="sentimentChart"></canvas>
+      </div>
+
+      <!-- Posts List -->
+      <h2 class="section-title">Individual Posts</h2>
+      <div id="postsList" class="posts-list"></div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>
+      ⚠️ <strong>Disclaimer:</strong> This tool analyses social sentiment from
+      X.com posts. It is <em>not</em> financial advice.
+    </p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

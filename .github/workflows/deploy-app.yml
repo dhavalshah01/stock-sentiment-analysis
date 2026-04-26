@@ -1,0 +1,135 @@
+name: Deploy Application
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+        default: dev
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: src/package-lock.json
+
+      - name: Install dependencies
+        working-directory: src
+        run: npm ci
+
+      - name: Run unit tests
+        working-directory: src
+        run: npm test
+
+  build:
+    name: Build Artifact
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: src/package-lock.json
+
+      - name: Install production dependencies
+        working-directory: src
+        run: npm ci --production
+
+      - name: Create deployment package
+        run: |
+          cd src
+          zip -r ../app-package.zip . -x "*.test.js" "*.spec.js" "__tests__/*" "coverage/*" ".env*"
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-package
+          path: app-package.zip
+          retention-days: 7
+
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'dev' }}
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment || 'dev' }}
+    env:
+      ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+    steps:
+      - name: Download deployment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-package
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Determine app name
+        id: app
+        run: |
+          APP_NAME="stocksentiment-${ENVIRONMENT}-app"
+          RG_NAME="stocksentiment-${ENVIRONMENT}-rg"
+          echo "name=${APP_NAME}" >> "$GITHUB_OUTPUT"
+          echo "rg=${RG_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ steps.app.outputs.name }}
+          resource-group-name: ${{ steps.app.outputs.rg }}
+          package: app-package.zip
+
+      - name: Wait for app startup
+        run: sleep 30
+
+      - name: Smoke test
+        run: |
+          APP_URL="https://${{ steps.app.outputs.name }}.azurewebsites.net"
+          echo "Running smoke test against ${APP_URL}/health"
+
+          MAX_RETRIES=5
+          RETRY_DELAY=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL}/health" --max-time 10 || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Smoke test passed (HTTP ${HTTP_CODE})"
+              exit 0
+            fi
+            echo "Attempt ${i}/${MAX_RETRIES}: HTTP ${HTTP_CODE} - retrying in ${RETRY_DELAY}s..."
+            sleep $RETRY_DELAY
+          done
+
+          echo "Smoke test failed after ${MAX_RETRIES} attempts"
+          exit 1
